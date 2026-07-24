@@ -10,12 +10,14 @@ export const errorMiddleware = (error, req, res, next) => {
     const isProduction =
         environment.nodeEnv === APP_CONSTANTS.NODE_ENV.PRODUCTION;
 
+    // Log full error for debugging
+    console.error(error.stack);
+
     res.status(statusCode).json({
         success: false,
         message:
             isProduction && !error.isOperational
                 ? RESPONSE_MESSAGES.INTERNAL_SERVER_ERROR
                 : error.message,
-        ...(isProduction ? {} : { stack: error.stack }),
     });
 };

@@ -47,6 +47,28 @@ export const createOrderItems = async (
 export const getConnection = async () => {
     return databasePool.getConnection();
 };
+
+export const findOrderByIdWithConnection = async (
+    connection,
+    orderId
+) => {
+    const query = `
+        SELECT
+            id,
+            store_id,
+            total_amount,
+            status,
+            created_at,
+            updated_at
+        FROM orders
+        WHERE id = ?
+    `;
+
+    const [rows] = await connection.execute(query, [orderId]);
+
+    return rows[0] || null;
+};
+
 export const getOrdersByStore = async (
     storeId,
     page,
@@ -60,7 +82,8 @@ export const getOrdersByStore = async (
             store_id,
             total_amount,
             status,
-            created_at
+            created_at,
+            updated_at
         FROM orders
         WHERE store_id = ?
         ORDER BY created_at DESC
@@ -132,4 +155,31 @@ export const updateOrderStatus = async (
     ]);
 
     return result.affectedRows;
+};
+
+
+export const getOrderItemsByOrderIds = async (orderIds) => {
+    if (orderIds.length === 0) {
+        return [];
+    }
+
+    const placeholders = orderIds
+        .map(() => "?")
+        .join(", ");
+
+    const query = `
+        SELECT
+            order_id,
+            item_id,
+            qty
+        FROM order_items
+        WHERE order_id IN (${placeholders})
+    `;
+
+    const [items] = await databasePool.execute(
+        query,
+        orderIds
+    );
+
+    return items;
 };

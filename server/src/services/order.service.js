@@ -1,13 +1,20 @@
 import { ORDER_STATUS } from "../constants/order.constants.js";
+
 import {
+    getConnection,
+    createOrder,
+    createOrderItems,
+    findOrderByIdWithConnection,
     getOrdersByStore,
     getOrdersCount,
-    getOrderItems,
+    getOrderItemsByOrderIds,
     findOrderById,
     updateOrderStatus,
 } from "../repositories/order.repository.js";
+
 import { AppError } from "../utils/appError.js";
 import { HTTP_STATUS } from "../constants/http.constants.js";
+import { mapOrderResponse } from "../mappers/order.mapper.js";
 
 export const createNewOrder = async (orderData) => {
     const connection = await getConnection();
@@ -26,14 +33,17 @@ export const createNewOrder = async (orderData) => {
             orderData.items
         );
 
+        const createdOrder =
+            await findOrderByIdWithConnection(
+                connection,
+                orderId
+            );
+
         await connection.commit();
 
         return {
-            id: orderId,
-            store_id: orderData.store_id,
+            ...mapOrderResponse(createdOrder),
             items: orderData.items,
-            total_amount: orderData.total_amount,
-            status: ORDER_STATUS.PLACED,
         };
     } catch (error) {
         await connection.rollback();
@@ -56,12 +66,31 @@ export const getOrders = async ({
 
     const total = await getOrdersCount(store_id);
 
-    for (const order of orders) {
-        order.items = await getOrderItems(order.id);
+    const orderIds = orders.map((order) => order.id);
+
+    const orderItems =
+        await getOrderItemsByOrderIds(orderIds);
+
+    const itemsByOrderId = {};
+
+    for (const item of orderItems) {
+        if (!itemsByOrderId[item.order_id]) {
+            itemsByOrderId[item.order_id] = [];
+        }
+
+        itemsByOrderId[item.order_id].push({
+            item_id: item.item_id,
+            qty: item.qty,
+        });
     }
 
+    const ordersWithItems = orders.map((order) => ({
+        ...mapOrderResponse(order),
+        items: itemsByOrderId[order.id] || [],
+    }));
+
     return {
-        orders,
+        orders: ordersWithItems,
         pagination: {
             page,
             limit,
@@ -86,8 +115,7 @@ export const changeOrderStatus = async ({
 
     await updateOrderStatus(id, status);
 
-    return {
-        ...order,
-        status,
-    };
+    const updatedOrder = await findOrderById(id);
+
+    return mapOrderResponse(updatedOrder);
 };

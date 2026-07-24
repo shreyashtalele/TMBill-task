@@ -26,7 +26,7 @@ orderRouter.post(
 
 orderRouter.get(
     API_ROUTES.ORDERS,
-    validate(getOrdersSchema),
+    validate(getOrdersSchema, "query"),
     getAllOrders
 );
 orderRouter.patch(
