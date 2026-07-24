@@ -1,23 +1,77 @@
+import { getSocketServer } from "../config/socket.config.js";
+
+import { HTTP_STATUS } from "../constants/http.constants.js";
 import { ORDER_STATUS } from "../constants/order.constants.js";
+import {
+    SOCKET_EVENTS,
+    SOCKET_ROOMS,
+} from "../constants/socket.constants.js";
+import { RESPONSE_MESSAGES } from "../constants/message.constants.js";
+
+import { mapOrderResponse } from "../mappers/order.mapper.js";
 
 import {
-    getConnection,
     createOrder,
     createOrderItems,
+    findOrderById,
     findOrderByIdWithConnection,
+    getConnection,
+    getOrderItemsByOrderIds,
     getOrdersByStore,
     getOrdersCount,
-    getOrderItemsByOrderIds,
-    findOrderById,
     updateOrderStatus,
 } from "../repositories/order.repository.js";
 
 import { AppError } from "../utils/appError.js";
-import { HTTP_STATUS } from "../constants/http.constants.js";
-import { mapOrderResponse } from "../mappers/order.mapper.js";
+
+const emitOrderEvent = ({
+    event,
+    storeId,
+    data,
+}) => {
+    try {
+        const io = getSocketServer();
+        const roomName = SOCKET_ROOMS.STORE(storeId);
+
+        io.to(roomName).emit(event, {
+            success: true,
+            data,
+        });
+    } catch (error) {
+        /*
+         * The database operation has already succeeded.
+         * A Socket.IO failure must not fail the HTTP request.
+         */
+        console.error(
+            RESPONSE_MESSAGES.SOCKET_EMIT_FAILED(event),
+            error
+        );
+    }
+};
+
+const groupOrderItemsByOrderId = (orderItems) => {
+    const itemsByOrderId = {};
+
+    for (const item of orderItems) {
+        const orderId = item.order_id;
+
+        if (!itemsByOrderId[orderId]) {
+            itemsByOrderId[orderId] = [];
+        }
+
+        itemsByOrderId[orderId].push({
+            item_id: item.item_id,
+            qty: item.qty,
+        });
+    }
+
+    return itemsByOrderId;
+};
 
 export const createNewOrder = async (orderData) => {
     const connection = await getConnection();
+
+    let createdOrder;
 
     try {
         await connection.beginTransaction();
@@ -33,24 +87,32 @@ export const createNewOrder = async (orderData) => {
             orderData.items
         );
 
-        const createdOrder =
+        const order =
             await findOrderByIdWithConnection(
                 connection,
                 orderId
             );
 
-        await connection.commit();
-
-        return {
-            ...mapOrderResponse(createdOrder),
+        createdOrder = {
+            ...mapOrderResponse(order),
             items: orderData.items,
         };
+
+        await connection.commit();
     } catch (error) {
         await connection.rollback();
         throw error;
     } finally {
         connection.release();
     }
+
+    emitOrderEvent({
+        event: SOCKET_EVENTS.NEW_ORDER,
+        storeId: createdOrder.store_id,
+        data: createdOrder,
+    });
+
+    return createdOrder;
 };
 
 export const getOrders = async ({
@@ -58,35 +120,22 @@ export const getOrders = async ({
     page,
     limit,
 }) => {
-    const orders = await getOrdersByStore(
-        store_id,
-        page,
-        limit
-    );
-
-    const total = await getOrdersCount(store_id);
+    const [orders, total] = await Promise.all([
+        getOrdersByStore(store_id, page, limit),
+        getOrdersCount(store_id),
+    ]);
 
     const orderIds = orders.map((order) => order.id);
 
     const orderItems =
         await getOrderItemsByOrderIds(orderIds);
 
-    const itemsByOrderId = {};
-
-    for (const item of orderItems) {
-        if (!itemsByOrderId[item.order_id]) {
-            itemsByOrderId[item.order_id] = [];
-        }
-
-        itemsByOrderId[item.order_id].push({
-            item_id: item.item_id,
-            qty: item.qty,
-        });
-    }
+    const itemsByOrderId =
+        groupOrderItemsByOrderId(orderItems);
 
     const ordersWithItems = orders.map((order) => ({
         ...mapOrderResponse(order),
-        items: itemsByOrderId[order.id] || [],
+        items: itemsByOrderId[order.id] ?? [],
     }));
 
     return {
@@ -104,11 +153,11 @@ export const changeOrderStatus = async ({
     id,
     status,
 }) => {
-    const order = await findOrderById(id);
+    const existingOrder = await findOrderById(id);
 
-    if (!order) {
+    if (!existingOrder) {
         throw new AppError(
-            "Order not found",
+            RESPONSE_MESSAGES.ORDER_NOT_FOUND,
             HTTP_STATUS.NOT_FOUND
         );
     }
@@ -116,6 +165,14 @@ export const changeOrderStatus = async ({
     await updateOrderStatus(id, status);
 
     const updatedOrder = await findOrderById(id);
+    const mappedOrder =
+        mapOrderResponse(updatedOrder);
 
-    return mapOrderResponse(updatedOrder);
+    emitOrderEvent({
+        event: SOCKET_EVENTS.ORDER_STATUS_UPDATED,
+        storeId: mappedOrder.store_id,
+        data: mappedOrder,
+    });
+
+    return mappedOrder;
 };

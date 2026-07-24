@@ -1,7 +1,9 @@
 import mysql from "mysql2/promise";
 
 import { environment } from "./env.config.js";
+
 import { DATABASE_CONSTANTS } from "../constants/database.constants.js";
+import { RESPONSE_MESSAGES } from "../constants/message.constants.js";
 
 export const databasePool = mysql.createPool({
     host: environment.database.host,
@@ -9,21 +11,35 @@ export const databasePool = mysql.createPool({
     user: environment.database.user,
     password: environment.database.password,
     database: environment.database.name,
-    waitForConnections: DATABASE_CONSTANTS.WAIT_FOR_CONNECTIONS,
-    connectionLimit: DATABASE_CONSTANTS.CONNECTION_LIMIT,
+    waitForConnections:
+        DATABASE_CONSTANTS.WAIT_FOR_CONNECTIONS,
+    connectionLimit:
+        DATABASE_CONSTANTS.CONNECTION_LIMIT,
     queueLimit: DATABASE_CONSTANTS.QUEUE_LIMIT,
 });
 
-export const verifyDatabaseConnection = async () => {
-    const connection = await databasePool.getConnection();
+export const verifyDatabaseConnection =
+    async () => {
+        const connection =
+            await databasePool.getConnection();
 
-    try {
-        await connection.ping();
-        console.log("MySQL connected successfully");
-    } finally {
-        connection.release();
-    }
-};
+        try {
+            await connection.ping();
+
+            console.log(
+                RESPONSE_MESSAGES.DATABASE_CONNECTED
+            );
+        } catch (error) {
+            console.error(
+                RESPONSE_MESSAGES.DATABASE_CONNECTION_FAILED,
+                error
+            );
+
+            throw error;
+        } finally {
+            connection.release();
+        }
+    };
 
 export const closeDatabasePool = async () => {
     await databasePool.end();

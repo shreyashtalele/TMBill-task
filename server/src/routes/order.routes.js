@@ -1,5 +1,7 @@
 import { Router } from "express";
 
+import { API_ROUTES } from "../constants/route.constants.js";
+
 import {
     createOrder,
     getAllOrders,
@@ -14,8 +16,6 @@ import {
     updateOrderStatusSchema,
 } from "../validators/order.validator.js";
 
-import { API_ROUTES } from "../constants/route.constants.js";
-
 const orderRouter = Router();
 
 orderRouter.post(
@@ -29,9 +29,11 @@ orderRouter.get(
     validate(getOrdersSchema, "query"),
     getAllOrders
 );
+
 orderRouter.patch(
     `${API_ROUTES.ORDERS}/:id/status`,
     validate(updateOrderStatusSchema),
     updateOrderStatus
 );
+
 export default orderRouter;
