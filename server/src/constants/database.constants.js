@@ -1,0 +1,6 @@
+export const DATABASE_CONSTANTS = Object.freeze({
+    DEFAULT_PORT: 3306,
+    CONNECTION_LIMIT: 10,
+    QUEUE_LIMIT: 0,
+    WAIT_FOR_CONNECTIONS: true,
+});
