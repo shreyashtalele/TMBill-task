@@ -7,6 +7,8 @@ import {
     fetchTopSellingItems,
 } from "../services/analytics.service.js";
 
+import { sendSuccessResponse } from "../utils/apiResponse.js";
+
 export const getOrdersPerDayController = async (
     request,
     response,
@@ -15,8 +17,9 @@ export const getOrdersPerDayController = async (
     try {
         const data = await fetchOrdersPerDay();
 
-        return response.status(HTTP_STATUS.OK).json({
-            success: true,
+        return sendSuccessResponse({
+            res: response,
+            statusCode: HTTP_STATUS.OK,
             message:
                 RESPONSE_MESSAGES.ORDERS_PER_DAY_FETCHED,
             data,
@@ -34,8 +37,9 @@ export const getRevenuePerStoreController = async (
     try {
         const data = await fetchRevenuePerStore();
 
-        return response.status(HTTP_STATUS.OK).json({
-            success: true,
+        return sendSuccessResponse({
+            res: response,
+            statusCode: HTTP_STATUS.OK,
             message:
                 RESPONSE_MESSAGES.REVENUE_PER_STORE_FETCHED,
             data,
@@ -53,8 +57,9 @@ export const getTopSellingItemsController = async (
     try {
         const data = await fetchTopSellingItems();
 
-        return response.status(HTTP_STATUS.OK).json({
-            success: true,
+        return sendSuccessResponse({
+            res: response,
+            statusCode: HTTP_STATUS.OK,
             message:
                 RESPONSE_MESSAGES.TOP_SELLING_ITEMS_FETCHED,
             data,
