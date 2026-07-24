@@ -10,7 +10,7 @@ import { API_ROUTES } from "./constants/route.constants.js";
 import { errorMiddleware } from "./middlewares/error.middleware.js";
 import { notFoundMiddleware } from "./middlewares/notFound.middleware.js";
 
-import orderRouter from "./routes/index.routes.js";
+import apiRouter from "./routes/index.routes.js";
 
 import { sendSuccessResponse } from "./utils/apiResponse.js";
 
@@ -32,7 +32,7 @@ app.get(API_ROUTES.HEALTH, (req, res) => {
     });
 });
 
-app.use(orderRouter);
+app.use(apiRouter);
 
 app.use(notFoundMiddleware);
 app.use(errorMiddleware);

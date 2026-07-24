@@ -42,6 +42,21 @@ export const RESPONSE_MESSAGES = Object.freeze({
     DATABASE_CONNECTION_FAILED:
         "Failed to connect to MySQL",
 
+    OLD_ORDERS_ARCHIVED:
+        "Old orders archived successfully",
+
+    ARCHIVE_COUNT_MISMATCH:
+        "Archived order count does not match deleted order count",
+
+    ORDERS_PER_DAY_FETCHED:
+        "Orders per day fetched successfully",
+
+    REVENUE_PER_STORE_FETCHED:
+        "Revenue per store fetched successfully",
+
+    TOP_SELLING_ITEMS_FETCHED:
+        "Top selling items fetched successfully",
+
     SOCKET_EMIT_FAILED: (event) =>
         `Failed to emit socket event "${event}"`,
 });
