@@ -15,7 +15,7 @@ import apiRouter from "./routes/index.routes.js";
 import { sendSuccessResponse } from "./utils/apiResponse.js";
 
 const app = express();
-
+console.log("Allowed client URL:", environment.clientUrl);
 const corsOptions = Object.freeze({
     origin: environment.clientUrl,
     credentials: true,
