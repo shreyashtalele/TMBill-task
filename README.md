@@ -132,8 +132,7 @@ Indexes
 ## 1. Clone Repository
 
 ```bash
-git clone [https://github.com/<your-username>/<repository>.git](https://github.com/shreyashtalele/TMBill-task.git)
-
+git clone https://github.com/shreyashtalele/TMBill-task.git
 cd TMBill
 ```
 
