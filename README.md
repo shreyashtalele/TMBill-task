@@ -132,7 +132,7 @@ Indexes
 ## 1. Clone Repository
 
 ```bash
-git clone https://github.com/<your-username>/<repository>.git
+git clone [https://github.com/<your-username>/<repository>.git](https://github.com/shreyashtalele/TMBill-task.git)
 
 cd TMBill
 ```
@@ -322,17 +322,6 @@ http://localhost:3000
 
 ---
 
-# Future Improvements
-
-- Authentication & Authorization
-- Swagger API Documentation
-- Unit & Integration Tests
-- CI/CD Pipeline
-- Redis Caching
-- Cloud Deployment (AWS)
-
----
-
 # Author
 
 **Shreyash Talele**
@@ -346,7 +335,3 @@ LinkedIn
 https://www.linkedin.com/in/shreyashtalele
 
 ---
-
-## License
-
-This project was developed as part of the **TMBill Full Stack Developer Assessment**.
